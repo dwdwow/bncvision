@@ -141,7 +141,7 @@ func UnzipAndSave(zipFilePath, destDir string) error {
 	return nil
 }
 
-// IsZipValid checks if a zip file is valid by attempting to create a new zip reader.
+// IsZippedFileValid checks if a zip file is valid by attempting to create a new zip reader.
 //
 // Parameters:
 //   - filePath: The path to the zip file to be checked.
@@ -150,7 +150,7 @@ func UnzipAndSave(zipFilePath, destDir string) error {
 //   - An error if any step of the validation process fails, nil otherwise.
 //
 // This function opens the specified zip file, reads its contents, and stores each file's
-func IsZipValid(filePath string) error {
+func IsZippedFileValid(filePath string) error {
 	// Open the file
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -174,7 +174,7 @@ func IsZipValid(filePath string) error {
 	return nil
 }
 
-// SaveZip saves a byte slice to a file, creating the necessary directories if they don't exist.
+// SaveZippedData saves a byte slice to a file, creating the necessary directories if they don't exist.
 //
 // Parameters:
 //   - data: The byte slice containing the data to be saved.
@@ -183,7 +183,7 @@ func IsZipValid(filePath string) error {
 // Returns:
 //   - An error if the file creation fails, or if the directories cannot be created.
 //   - nil if the file is successfully saved.
-func SaveZip(data []byte, filePath string) error {
+func SaveZippedData(data []byte, filePath string) error {
 	err := os.MkdirAll(filepath.Dir(filePath), 0755)
 	if err != nil {
 		return err
@@ -191,22 +191,30 @@ func SaveZip(data []byte, filePath string) error {
 	return os.WriteFile(filePath, data, 0644)
 }
 
-// SaveZipWithRetry saves a byte slice to a file, creating the necessary directories if they don't exist.
+// SaveZippedDataWithRetry saves a byte slice to a file, creating the necessary directories if they don't exist.
 // If the initial attempt fails, it retries the process.
 //
 // Parameters:
 //   - data: The byte slice containing the data to be saved.
 //   - filePath: The path where the data will be saved.
-//   - retryCount: The number of retry attempts if the initial save fails.
-func SaveZipWithRetry(data []byte, filePath string, retryCount int) error {
-	err := SaveZip(data, filePath)
-	if err != nil {
-		if retryCount <= 0 {
-			return fmt.Errorf("failed to save zip file after all retries: %w", err)
-		}
-		return SaveZipWithRetry(data, filePath, retryCount-1)
+//   - tryCount: The number of try attempts.
+//
+// Returns:
+//   - An error if the file creation fails, or if the directories cannot be created.
+//   - nil if the file is successfully saved.
+func SaveZippedDataWithRetry(data []byte, filePath string, tryCount int) error {
+	if tryCount <= 0 {
+		return fmt.Errorf("tryCount must be greater than 0")
 	}
-	return nil
+	var err error
+	for i := 0; i < tryCount; i++ {
+		err = SaveZippedData(data, filePath)
+		if err == nil {
+			return nil
+		}
+		gLogger.Error("Failed to save zipped data, retrying", "attempt", i+1, "error", err)
+	}
+	return fmt.Errorf("failed to save zipped data after %d attempts: %w", tryCount, err)
 }
 
 // ZipAndSaveWithRetry compresses the given data, saves it to a zip file, and verifies its validity.
@@ -226,7 +234,7 @@ func SaveZipWithRetry(data []byte, filePath string, retryCount int) error {
 // the validity of the created zip file. If the file is invalid or the process fails,
 // it retries up to 'retryCount' times. This ensures the final zip file is both
 // successfully created and valid.
-func ZipAndSave(data []byte, insideFileName, zipSavePath string) error {
+func ZipDataAndSave(data []byte, insideFileName, zipSavePath string) error {
 	// Create a buffer to write our archive to.
 	buf := new(bytes.Buffer)
 
@@ -260,36 +268,29 @@ func ZipAndSave(data []byte, insideFileName, zipSavePath string) error {
 	return nil
 }
 
-// ZipAndSaveWithRetry compresses the given data, saves it to a zip file, and verifies its validity.
+// ZipDataAndSaveWithRetry compresses the given data, saves it to a zip file, and verifies its validity.
 // If the initial attempt fails or produces an invalid zip, it retries the process.
 //
 // Parameters:
 //   - data: The byte slice containing the data to be compressed.
 //   - insideFileName: The name of the file to be created inside the zip archive.
 //   - zipSavePath: The path where the resulting zip file will be saved.
-//   - retryCount: The number of retry attempts if the initial zip fails or produces an invalid result.
-func ZipAndSaveWithRetry(data []byte, insideFileName, zipSavePath string, retryCount int) error {
-	err := ZipAndSave(data, insideFileName, zipSavePath)
-	if err != nil {
-		if retryCount <= 0 {
-			return fmt.Errorf("zip file is not valid after all retries: %w", err)
+//   - tryCount: The number of try attempts.
+//
+// Returns:
+//   - An error if the zip process fails after all try attempts, or if the resulting file is invalid.
+//   - nil if the zip process succeeds and produces a valid result.
+func ZipDataAndSaveWithRetry(data []byte, insideFileName, zipSavePath string, tryCount int) error {
+	if tryCount <= 0 {
+		return fmt.Errorf("tryCount must be greater than 0")
+	}
+	var err error
+	for i := 0; i < tryCount; i++ {
+		err = ZipDataAndSave(data, insideFileName, zipSavePath)
+		if err == nil {
+			return nil
 		}
-
-		// If not valid, try zipping and saving again
-		return ZipAndSaveWithRetry(data, insideFileName, zipSavePath, retryCount-1)
+		gLogger.Error("Failed to zip data and save, retrying", "attempt", i+1, "error", err)
 	}
-
-	// Check if the zipped file is valid
-	err = IsZipValid(zipSavePath)
-	if err == nil {
-		// File is valid, no need for further action
-		return nil
-	}
-
-	if retryCount <= 0 {
-		return fmt.Errorf("zip file is not valid after all retries: %w", err)
-	}
-
-	// If not valid, try zipping and saving again
-	return ZipAndSaveWithRetry(data, insideFileName, zipSavePath, retryCount-1)
+	return fmt.Errorf("failed to zip data and save after %d attempts: %w", tryCount, err)
 }
