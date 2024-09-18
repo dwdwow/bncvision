@@ -86,6 +86,9 @@ func DownloadWithXMLContents(contents []DataVisionXMLContent, localParentDir str
 	mu := sync.Mutex{}
 	for _, content := range contents {
 		fileRelativePath := content.Key
+		if !strings.HasSuffix(fileRelativePath, ".zip") {
+			continue
+		}
 		content := content
 		wg.Go(func() error {
 			fileUrl := DATA_VISION_URL + "/" + fileRelativePath

@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Unzip extracts files from a zip archive and returns their contents as a map.
@@ -170,6 +171,9 @@ func FileExists(filePath string) (bool, error) {
 //
 // This function opens the specified zip file, reads its contents, and stores each file's
 func IsZippedFileValid(filePath string) error {
+	if !strings.HasSuffix(filePath, ".zip") {
+		return fmt.Errorf("file is not a zip file")
+	}
 	// Open the file
 	file, err := os.Open(filePath)
 	if err != nil {
