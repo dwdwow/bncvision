@@ -111,3 +111,12 @@ func DownloadWithXMLContents(contents []DataVisionXMLContent, localParentDir str
 	err = wg.Wait()
 	return
 }
+
+func DownloadAllUnderPath(prefix string, maxDownloadingNum int8) (undownloadContents []DataVisionXMLContent, err error) {
+	_, _, contents, err := QueryDataVisionXML(prefix, "")
+	if err != nil {
+		return
+	}
+	undownloadContents, err = DownloadWithXMLContents(contents, prefix, maxDownloadingNum)
+	return
+}
