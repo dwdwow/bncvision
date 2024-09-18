@@ -2,10 +2,10 @@ package bncvision
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 
@@ -91,12 +91,18 @@ func DownloadWithXMLContents(contents []DataVisionXMLContent, localParentDir str
 			fileUrl := DATA_VISION_URL + "/" + fileRelativePath
 			gLogger.Info("prepare to download file", "url", fileUrl)
 			fileLocation := localParentDir + "/" + fileRelativePath
-			_, err := os.Stat(fileLocation)
-			if err == nil {
+			fileExists, err := FileExists(fileLocation)
+			if err != nil {
+				mu.Lock()
+				undownloadContents = append(undownloadContents, content)
+				mu.Unlock()
+				return fmt.Errorf("failed to check if file exists: %w", err)
+			}
+			if fileExists {
 				slog.Info("file exists", "file", fileLocation)
 				return nil
 			}
-			err = DownloadSaveZipWithRetryAndValidate(fileUrl, localParentDir, 3)
+			err = DownloadSaveZipWithRetryAndValidate(fileLocation, fileUrl, 3)
 			if err != nil {
 				gLogger.Error("downloading file", "err", err)
 				mu.Lock()
@@ -117,6 +123,6 @@ func DownloadAllUnderPath(prefix string, maxDownloadingNum int8) (undownloadCont
 	if err != nil {
 		return
 	}
-	undownloadContents, err = DownloadWithXMLContents(contents, prefix, maxDownloadingNum)
+	undownloadContents, err = DownloadWithXMLContents(contents, DATA_BINANCE_VISION, maxDownloadingNum)
 	return
 }
