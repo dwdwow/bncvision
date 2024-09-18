@@ -126,6 +126,6 @@ func DownloadAllUnderPath(prefix string, maxDownloadingNum int8) (undownloadCont
 	if err != nil {
 		return
 	}
-	undownloadContents, err = DownloadWithXMLContents(contents, DATA_BINANCE_VISION, maxDownloadingNum)
+	undownloadContents, err = DownloadWithXMLContents(contents, homeDir+"/"+DATA_BINANCE_VISION, maxDownloadingNum)
 	return
 }
