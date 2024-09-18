@@ -141,6 +141,25 @@ func UnzipAndSave(zipFilePath, destDir string) error {
 	return nil
 }
 
+// FileExists checks if a file exists at the given path.
+//
+// Parameters:
+//   - filePath: The path to the file to be checked.
+//
+// Returns:
+//   - A boolean indicating whether the file exists (true) or not (false).
+//   - An error if any occurred during the check, nil otherwise.
+func FileExists(filePath string) (bool, error) {
+	_, err := os.Stat(filePath)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
 // IsZippedFileValid checks if a zip file is valid by attempting to create a new zip reader.
 //
 // Parameters:

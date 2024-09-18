@@ -129,10 +129,11 @@ func DownloadSaveZipWithRetryAndValidate(filePath, url string, tryCount int) err
 		return fmt.Errorf("tryCount must be greater than 0")
 	}
 
-	// First, check if the local file exists and is valid
-	err := IsZippedFileValid(filePath)
-	if err == nil {
-		// Local file is valid, no need to download
+	exists, err := FileExists(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to check if file exists: %w", err)
+	}
+	if exists {
 		return nil
 	}
 
