@@ -35,7 +35,26 @@ func ReadCsvZipToStructs[T any](zipPath string, rawToStructFunc RawToStructFunc[
 		return nil, err
 	}
 
-	for _, record := range records {
+	if len(records) == 0 {
+		return nil, nil
+	}
+
+	firstRecord := records[0]
+	if len(firstRecord) == 0 {
+		return nil, fmt.Errorf("first record is empty")
+	}
+
+	var hasHeader bool
+	_, err = rawToStructFunc(firstRecord)
+	if err != nil {
+		hasHeader = true
+	}
+
+	if hasHeader && len(records) == 1 {
+		return nil, nil
+	}
+
+	for _, record := range records[1:] {
 		result, err := rawToStructFunc(record)
 		if err != nil {
 			return nil, err
