@@ -14,12 +14,20 @@ func main() {
 	}
 	fmt.Println("calculate intervals")
 	var intervals []int64
+	var quote float64
+	var preInterval int64
 	for i, trade := range trades {
 		if i == 0 {
+			preInterval = trade.Time
 			continue
 		}
-		interval := trade.Time - trades[i-1].Time
-		intervals = append(intervals, interval)
+		quote += trade.QuoteQty
+		if quote > 1_000_000 {
+			interval := trade.Time - preInterval
+			intervals = append(intervals, interval)
+			quote = 0
+			preInterval = trade.Time
+		}
 	}
 	fmt.Println("intervals calculated")
 	fmt.Println(intervals)
