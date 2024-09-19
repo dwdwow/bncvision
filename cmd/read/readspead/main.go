@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/dwdwow/bncvision"
 )
@@ -31,4 +33,26 @@ func main() {
 	}
 	fmt.Println("intervals calculated")
 	fmt.Println(intervals)
+	fmt.Println("Saving intervals to file")
+	err = saveIntervalsToJSON(intervals, "/home/ubuntu/work.binance.vision/test/intervals.json")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Intervals saved successfully")
+}
+
+func saveIntervalsToJSON(intervals []int64, filePath string) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("error creating file: %w", err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(intervals)
+	if err != nil {
+		return fmt.Errorf("error encoding JSON: %w", err)
+	}
+
+	return nil
 }
