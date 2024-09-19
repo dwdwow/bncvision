@@ -15,33 +15,28 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("calculate intervals")
-	var intervals []int64
-	var quote float64
-	var preInterval int64
-	for i, trade := range trades {
-		if i == 0 {
-			preInterval = trade.Time
-			continue
-		}
-		quote += trade.QuoteQty
-		if quote > 1_000_000 {
-			interval := trade.Time - preInterval
-			intervals = append(intervals, interval)
-			quote = 0
-			preInterval = trade.Time
+	var quotes []float64
+	var totalQuote float64
+	preTs := trades[0].Time
+	for _, trade := range trades[1:] {
+		totalQuote += trade.QuoteQty
+		if trade.Time-preTs >= 100 {
+			quotes = append(quotes, totalQuote)
+			totalQuote = 0
+			preTs = trade.Time
 		}
 	}
 	fmt.Println("intervals calculated")
-	fmt.Println(intervals)
+	fmt.Println(quotes)
 	fmt.Println("Saving intervals to file")
-	err = saveIntervalsToJSON(intervals, "/home/ubuntu/work.binance.vision/test/intervals.json")
+	err = saveIntervalsToJSON(quotes, "/home/ubuntu/work.binance.vision/test/intervals.json")
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("Intervals saved successfully")
 }
 
-func saveIntervalsToJSON(intervals []int64, filePath string) error {
+func saveIntervalsToJSON(intervals []float64, filePath string) error {
 	file, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("error creating file: %w", err)
