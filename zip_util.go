@@ -19,6 +19,10 @@ func UnzipAllAndSaveInDir(zipDir string, destDir string) error {
 
 	maxWorkers := cpus / 2
 
+	if maxWorkers == 0 {
+		maxWorkers = 1
+	}
+
 	wg := errgroup.Group{}
 
 	wg.SetLimit(maxWorkers)
