@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-	readTradesCSVAndSaveStructs()
 }
 
 func saveIntervalsToJSON(intervals []float64, filePath string) error {
@@ -26,16 +25,6 @@ func saveIntervalsToJSON(intervals []float64, filePath string) error {
 	}
 
 	return nil
-}
-
-func readTradesCSVAndSaveStructs() {
-	symbol := "BTCUSDT"
-	csvFileDir := "/home/ubuntu/unzip.binance.vision/data/spot/daily/trades/" + symbol
-	jsonFileDir := "/home/ubuntu/struct.binance.vision/data/spot/daily/trades/" + symbol
-	err := bncvision.ReadAllCSVToStructsAndSaveToJSON(csvFileDir, jsonFileDir, bncvision.SpotTradeRawToStruct)
-	if err != nil {
-		panic(err)
-	}
 }
 
 func readCSVZipToStructs() {
