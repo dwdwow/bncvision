@@ -16,6 +16,13 @@ const (
 	// MISS_BINANCE_VISION is the directory for missing data from binance vision
 	// binance vision data is not complete, and some data is missing
 	MISS_BINANCE_VISION = "miss.binance.vision"
+	// UNZIP_BINANCE_VISION is the directory for unzipped binance vision data
+	UNZIP_BINANCE_VISION = "unzip.binance.vision"
+	// WORK_BINANCE_VISION is the directory for working with binance vision data
+	WORK_BINANCE_VISION = "work.binance.vision"
+	// STRUCT_BINANCE_VISION is the directory for struct binance vision data
+	// save struct data to json file for future use
+	STRUCT_BINANCE_VISION = "struct.binance.vision"
 )
 
 var (
