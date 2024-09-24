@@ -76,3 +76,20 @@ func CSVToStruct[T any](data [][]string, convertFunc RawToStructFunc[T]) ([]T, e
 
 	return result, nil
 }
+
+// CSVToStructs reads a CSV file and converts its contents to a slice of structs using a provided conversion function.
+//
+// Parameters:
+//   - filePath: The path to the CSV file to be read.
+//   - convertFunc: A function that converts a single CSV row (string slice) to a struct of type T.
+//
+// Returns:
+//   - A slice of structs of type T, where each struct represents a row from the CSV data.
+//   - An error if any step of the reading or conversion process fails, nil otherwise.
+func CSVToStructs[T any](filePath string, convertFunc RawToStructFunc[T]) ([]T, error) {
+	data, err := ReadCSV(filePath)
+	if err != nil {
+		return nil, err
+	}
+	return CSVToStruct(data, convertFunc)
+}
