@@ -2,6 +2,7 @@ package bncvision
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -82,10 +83,13 @@ func ReadAllCSVToStructsAndSaveToJSON[T any](csvFileDir, jsonFileDir string, con
 			csvFilePath := filepath.Join(csvFileDir, file.Name())
 			jsonFilePath := filepath.Join(jsonFileDir, file.Name())
 			jsonFilePath = strings.Replace(jsonFilePath, ".csv", ".json", 1)
+			slog.Info("reading", "csvFilePath", csvFilePath, "jsonFilePath", jsonFilePath)
 			err := ReadCSVToStructsAndSaveToJSON(csvFilePath, jsonFilePath, convertFunc)
 			if err != nil {
+				slog.Error("read", "csvFilePath", csvFilePath, "jsonFilePath", jsonFilePath, "error", err)
 				return err
 			}
+			slog.Info("read", "csvFilePath", csvFilePath, "jsonFilePath", jsonFilePath)
 			return nil
 		})
 	}
