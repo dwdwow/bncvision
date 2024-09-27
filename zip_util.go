@@ -31,7 +31,7 @@ func UnzipAllAndSaveInDir(zipDir string, destDir string) error {
 		zipFilePath := filepath.Join(zipDir, file.Name())
 		wg.Go(func() error {
 			slog.Info("unzipping", "file", zipFilePath)
-			err := UnzipAndSave(zipFilePath, destDir)
+			err := UnzipAndSaveWithExistChecking(zipFilePath, destDir)
 			slog.Info("unzipped", "file", zipFilePath)
 			if err != nil {
 				slog.Error("error unzipping", "file", zipFilePath, "error", err)
