@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	undownloadContents, err := bncvision.DownloadAllUnderPath("data/spot/daily/trades/BTCUSDT", 20)
+	undownloadContents, err := bncvision.DownloadAllUnderPath("data/spot/daily/trades/ETHUSDT", 20)
 	if err != nil {
 		panic(err)
 	}
