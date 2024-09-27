@@ -142,6 +142,83 @@ func UnzipAndSave(zipFilePath, destDir string) error {
 	return nil
 }
 
+// UnzipAndSaveWithExistChecking extracts the contents of a zip file to a specified directory on disk.
+// It checks if the file already exists and skips it if it does.
+//
+// Parameters:
+//   - zipFilePath: The path to the zip file to be extracted.
+//   - destDir: The destination directory where the contents will be saved.
+//
+// Returns:
+//   - An error if any step of the unzipping process fails, nil otherwise.
+func UnzipAndSaveWithExistChecking(zipFilePath, destDir string) error {
+	// Read the zip file
+	zipFile, err := os.Open(zipFilePath)
+	if err != nil {
+		return err
+	}
+	defer zipFile.Close()
+
+	// Get file info
+	info, err := zipFile.Stat()
+	if err != nil {
+		return err
+	}
+
+	// Create a new zip reader
+	reader, err := zip.NewReader(zipFile, info.Size())
+	if err != nil {
+		return err
+	}
+
+	// Create destination directory if it doesn't exist
+	if err := os.MkdirAll(destDir, os.ModePerm); err != nil {
+		return err
+	}
+
+	for _, file := range reader.File {
+		// Construct the full path for the extracted file
+		path := filepath.Join(destDir, file.Name)
+
+		exists, err := FileExists(path)
+		if err != nil {
+			return err
+		}
+
+		if exists {
+			continue
+		}
+
+		if file.FileInfo().IsDir() {
+			// Create directory
+			os.MkdirAll(path, file.Mode())
+			continue
+		}
+
+		// Create the file
+		outFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
+		if err != nil {
+			return err
+		}
+
+		rc, err := file.Open()
+		if err != nil {
+			outFile.Close()
+			return err
+		}
+
+		_, err = io.Copy(outFile, rc)
+		rc.Close()
+		outFile.Close()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // FileExists checks if a file exists at the given path.
 //
 // Parameters:
