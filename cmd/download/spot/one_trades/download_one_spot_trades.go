@@ -7,11 +7,14 @@ import (
 )
 
 func main() {
-	undownloadContents, err := bncvision.DownloadAllUnderPath("data/spot/daily/trades/SOLUSDT", 20)
-	if err != nil {
-		panic(err)
-	}
-	for _, content := range undownloadContents {
-		fmt.Println(content.Key)
+	symbols := []string{"ETHBTC", "PEPEUSDT", "WLDUSDT", "BNBUSDT"}
+	for _, symbol := range symbols {
+		undownloadContents, err := bncvision.DownloadAllUnderPath("data/spot/daily/trades/"+symbol, 20)
+		if err != nil {
+			panic(err)
+		}
+		for _, content := range undownloadContents {
+			fmt.Println(content.Key)
+		}
 	}
 }
