@@ -196,7 +196,7 @@ func UnzipAndSaveWithExistChecking(zipFilePath, destDir string) error {
 		}
 
 		// Create the file
-		outFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
+		outFile, err := os.Create(path)
 		if err != nil {
 			return err
 		}
