@@ -65,11 +65,15 @@ func AggTradeRawToStruct(raw []string) (bnc.SpotAggTrades, error) {
 	if err != nil {
 		return trade, err
 	}
-	trade.IsBuyerMaker, err = strconv.ParseBool(raw[5])
+	trade.Time, err = strconv.ParseInt(raw[5], 10, 64)
 	if err != nil {
 		return trade, err
 	}
-	trade.IsBestMatch, err = strconv.ParseBool(raw[6])
+	trade.IsBuyerMaker, err = strconv.ParseBool(raw[6])
+	if err != nil {
+		return trade, err
+	}
+	trade.IsBestMatch, err = strconv.ParseBool(raw[7])
 	if err != nil {
 		return trade, err
 	}
