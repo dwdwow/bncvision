@@ -10,7 +10,7 @@ func main() {
 	// symbols := []string{"ETHBTC", "PEPEUSDT", "WLDUSDT", "BNBUSDT"}
 	symbols := []string{"BTCUSDT"}
 	for _, symbol := range symbols {
-		undownloadContents, err := bncvision.DownloadAllUnderPath("data/spot/daily/aggTrades/"+symbol, 20)
+		undownloadContents, err := bncvision.DownloadAllUnderPath("data/futures/daily/aggTrades/"+symbol, 20)
 		if err != nil {
 			panic(err)
 		}
