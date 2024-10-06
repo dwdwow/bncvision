@@ -12,7 +12,8 @@ func main() {
 
 func unzip() {
 	var err error
-	dataType := "futures/um"
+	// dataType := "futures/um"
+	dataType := "spot"
 	// symbols := []string{"BTCUSDT", "ETHUSDT", "ETHBTC", "PEPEUSDT", "WLDUSDT", "BNBUSDT"}
 	symbols := []string{"BTCUSDT"}
 	for _, symbol := range symbols {

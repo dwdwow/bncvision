@@ -8,9 +8,11 @@ import (
 
 func main() {
 	// symbols := []string{"ETHBTC", "PEPEUSDT", "WLDUSDT", "BNBUSDT"}
+	// mid := "futures/um"
+	mid := "spot"
 	symbols := []string{"BTCUSDT"}
 	for _, symbol := range symbols {
-		undownloadContents, err := bncvision.DownloadAllUnderPath("data/futures/um/daily/aggTrades/"+symbol, 20)
+		undownloadContents, err := bncvision.DownloadAllUnderPath("data/"+mid+"/daily/aggTrades/"+symbol, 20)
 		if err != nil {
 			panic(err)
 		}
