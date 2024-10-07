@@ -73,9 +73,11 @@ func AggTradeRawToStruct(raw []string) (bnc.SpotAggTrades, error) {
 	if err != nil {
 		return trade, err
 	}
-	trade.IsBestMatch, err = strconv.ParseBool(raw[7])
-	if err != nil {
-		return trade, err
+	if len(raw) > 7 {
+		trade.IsBestMatch, err = strconv.ParseBool(raw[7])
+		if err != nil {
+			return trade, err
+		}
 	}
 	return trade, nil
 }
