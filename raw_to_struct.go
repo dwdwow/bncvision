@@ -1,6 +1,7 @@
 package bncvision
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/dwdwow/cex/bnc"
@@ -80,4 +81,21 @@ func AggTradeRawToStruct(raw []string) (bnc.SpotAggTrades, error) {
 		}
 	}
 	return trade, nil
+}
+
+func FundingRateRawToStruct(raw []string) (bnc.FuturesFundingRateHistory, error) {
+	if len(raw) < 3 {
+		return bnc.FuturesFundingRateHistory{}, errors.New("invalid funding rate csv raw")
+	}
+	fundingRate := bnc.FuturesFundingRateHistory{}
+	var err error
+	fundingRate.FundingTime, err = strconv.ParseInt(raw[0], 10, 64)
+	if err != nil {
+		return fundingRate, err
+	}
+	fundingRate.FundingRate, err = strconv.ParseFloat(raw[2], 64)
+	if err != nil {
+		return fundingRate, err
+	}
+	return fundingRate, nil
 }
