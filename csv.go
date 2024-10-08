@@ -66,7 +66,21 @@ func ReadCSV(filePath string) ([][]string, error) {
 func CSVToStructs[T any](data [][]string, convertFunc RawToStructFunc[T]) ([]T, error) {
 	var result []T
 
-	for _, row := range data {
+	if len(data) == 0 {
+		return result, nil
+	}
+
+	var start int
+
+	_, err := convertFunc(data[0])
+	if err != nil {
+		if len(data) == 1 {
+			return nil, err
+		}
+		start = 1
+	}
+
+	for _, row := range data[start:] {
 		item, err := convertFunc(row)
 		if err != nil {
 			return nil, err
