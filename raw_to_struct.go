@@ -99,3 +99,56 @@ func FundingRateRawToStruct(raw []string) (bnc.FuturesFundingRateHistory, error)
 	}
 	return fundingRate, nil
 }
+
+func KlineRawToStruct(raw []string) (bnc.Kline, error) {
+	if len(raw) < 12 {
+		return bnc.Kline{}, errors.New("invalid kline csv raw")
+	}
+	kline := bnc.Kline{}
+	var err error
+	kline.OpenTime, err = strconv.ParseInt(raw[0], 10, 64)
+	if err != nil {
+		return kline, err
+	}
+	kline.OpenPrice, err = strconv.ParseFloat(raw[1], 64)
+	if err != nil {
+		return kline, err
+	}
+	kline.HighPrice, err = strconv.ParseFloat(raw[2], 64)
+	if err != nil {
+		return kline, err
+	}
+	kline.LowPrice, err = strconv.ParseFloat(raw[3], 64)
+	if err != nil {
+		return kline, err
+	}
+	kline.ClosePrice, err = strconv.ParseFloat(raw[4], 64)
+	if err != nil {
+		return kline, err
+	}
+	kline.Volume, err = strconv.ParseFloat(raw[5], 64)
+	if err != nil {
+		return kline, err
+	}
+	kline.CloseTime, err = strconv.ParseInt(raw[6], 10, 64)
+	if err != nil {
+		return kline, err
+	}
+	kline.QuoteAssetVolume, err = strconv.ParseFloat(raw[7], 64)
+	if err != nil {
+		return kline, err
+	}
+	kline.TradesNumber, err = strconv.ParseInt(raw[8], 10, 64)
+	if err != nil {
+		return kline, err
+	}
+	kline.TakerBuyBaseAssetVolume, err = strconv.ParseFloat(raw[9], 64)
+	if err != nil {
+		return kline, err
+	}
+	kline.TakerBuyQuoteAssetVolume, err = strconv.ParseFloat(raw[10], 64)
+	if err != nil {
+		return kline, err
+	}
+	return kline, nil
+}
