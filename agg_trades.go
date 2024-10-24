@@ -2,6 +2,7 @@ package bncvision
 
 import (
 	"fmt"
+	"log/slog"
 	"math"
 	"os"
 	"path/filepath"
@@ -78,13 +79,25 @@ func VerifyOneDirAggTradesContinuity(dir string, maxCpus int) error {
 	for i, file := range validFiles {
 		i, file := i, file
 		wg.Go(func() error {
-			aggTrades, err := ReadCSVToStructs(filepath.Join(dir, file), AggTradeRawToStruct)
+			filePath := filepath.Join(dir, file)
+			slog.Info("Reading CSV To Structs", "file", file)
+			aggTrades, err := ReadCSVToStructs(filePath, AggTradeRawToStruct)
 			if err != nil {
+				slog.Error("Read CSV To Structs", "file", file, "error", err)
 				return err
 			}
+			slog.Info("Read CSV To Structs", "file", file, "len", len(aggTrades))
 			if len(aggTrades) == 0 {
+				slog.Info("ReadCSVToStructs Skip", "file", file, "len", len(aggTrades))
 				return nil
 			}
+			slog.Info("Verifying Agg Trades Continuity", "file", file)
+			err = VerifyAggTradesContinues(aggTrades, 1)
+			if err != nil {
+				slog.Error("Verify Agg Trades Continuity", "file", file, "error", err)
+				return err
+			}
+			slog.Info("Verified Agg Trades Continuity", "file", file)
 			lastIds[i] = [2]int64{aggTrades[0].FirstTradeId, aggTrades[len(aggTrades)-1].LastTradeId}
 			return nil
 		})
@@ -216,14 +229,20 @@ func OneDirAggTradesToInnerDayKlines(dir string, interval time.Duration, maxCpus
 	for _, file := range validFiles {
 		file := file
 		wg.Go(func() error {
+			slog.Info("Reading CSV To Structs", "file", file)
 			aggTrades, err := ReadCSVToStructs(filepath.Join(dir, file), AggTradeRawToStruct)
 			if err != nil {
+				slog.Error("Read CSV To Structs", "file", file, "error", err)
 				return err
 			}
+			slog.Info("Read CSV To Structs", "file", file, "len", len(aggTrades))
+			slog.Info("Merging Agg Trades To Klines", "file", file, "len", len(aggTrades))
 			kl, err := AggTradesToKlines(aggTrades, interval)
 			if err != nil {
+				slog.Error("Merging Agg Trades To Klines", "file", file, "error", err)
 				return err
 			}
+			slog.Info("Merged Agg Trades To Klines", "file", file, "len", len(kl))
 			mu.Lock()
 			klines = append(klines, kl...)
 			mu.Unlock()
