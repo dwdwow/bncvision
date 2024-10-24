@@ -179,7 +179,11 @@ func AggTradesToKlines(aggTrades []bnc.SpotAggTrades, interval time.Duration) ([
 	return klines, nil
 }
 
-func OneDirAggTradesToKlines(dir string, interval time.Duration, maxCpus int) ([]*bnc.Kline, error) {
+func OneDirAggTradesToInnerDayKlines(dir string, interval time.Duration, maxCpus int) ([]*bnc.Kline, error) {
+	if interval.Hours() >= 24 {
+		return nil, fmt.Errorf("interval must be less than one day")
+	}
+
 	if maxCpus <= 0 {
 		maxCpus = 1
 	}
