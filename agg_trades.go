@@ -3,6 +3,11 @@ package bncvision
 import (
 	"fmt"
 	"math"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/dwdwow/cex/bnc"
@@ -43,6 +48,60 @@ func VerifyAggTradesContinues(aggTrades []bnc.SpotAggTrades, maxCpus int) error 
 	}
 
 	return wg.Wait()
+}
+
+func VerifyOneDirAggTradesContinuity(dir string, maxCpus int) error {
+	if maxCpus <= 0 {
+		maxCpus = 1
+	}
+
+	var validFiles []string
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), ".csv") {
+			validFiles = append(validFiles, file.Name())
+		}
+	}
+
+	sort.Slice(validFiles, func(i, j int) bool {
+		return validFiles[i] < validFiles[j]
+	})
+
+	wg := errgroup.Group{}
+	wg.SetLimit(maxCpus)
+
+	lastIds := make([][2]int64, len(validFiles))
+
+	for i, file := range validFiles {
+		i, file := i, file
+		wg.Go(func() error {
+			aggTrades, err := ReadCSVToStructs(filepath.Join(dir, file), AggTradeRawToStruct)
+			if err != nil {
+				return err
+			}
+			if len(aggTrades) == 0 {
+				return nil
+			}
+			lastIds[i] = [2]int64{aggTrades[0].FirstTradeId, aggTrades[len(aggTrades)-1].LastTradeId}
+			return nil
+		})
+	}
+
+	err = wg.Wait()
+	if err != nil {
+		return err
+	}
+
+	for i, file := range validFiles[:len(validFiles)-1] {
+		if lastIds[i][1]+1 != lastIds[i+1][0] {
+			return fmt.Errorf("agg trade file %s and %s are not continuous", file, validFiles[i+1])
+		}
+	}
+
+	return nil
 }
 
 func AggTradesToKlines(aggTrades []bnc.SpotAggTrades, interval time.Duration) ([]*bnc.Kline, error) {
@@ -118,4 +177,100 @@ func AggTradesToKlines(aggTrades []bnc.SpotAggTrades, interval time.Duration) ([
 	klines = append(klines, kline)
 
 	return klines, nil
+}
+
+func OneDirAggTradesToKlines(dir string, interval time.Duration, maxCpus int) ([]*bnc.Kline, error) {
+	if maxCpus <= 0 {
+		maxCpus = 1
+	}
+
+	err := VerifyOneDirAggTradesContinuity(dir, maxCpus)
+	if err != nil {
+		return nil, err
+	}
+
+	var validFiles []string
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), ".csv") {
+			validFiles = append(validFiles, file.Name())
+		}
+	}
+
+	sort.Slice(validFiles, func(i, j int) bool {
+		return validFiles[i] < validFiles[j]
+	})
+
+	wg := errgroup.Group{}
+	wg.SetLimit(maxCpus)
+	mu := sync.Mutex{}
+	klines := []*bnc.Kline{}
+
+	for _, file := range validFiles {
+		file := file
+		wg.Go(func() error {
+			aggTrades, err := ReadCSVToStructs(filepath.Join(dir, file), AggTradeRawToStruct)
+			if err != nil {
+				return err
+			}
+			kl, err := AggTradesToKlines(aggTrades, interval)
+			if err != nil {
+				return err
+			}
+			mu.Lock()
+			klines = append(klines, kl...)
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	err = wg.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(klines) == 0 {
+		return nil, nil
+	}
+
+	sort.Slice(klines, func(i, j int) bool {
+		return klines[i].OpenTime < klines[j].OpenTime
+	})
+
+	newKlines := make([]*bnc.Kline, (klines[len(klines)-1].OpenTime-klines[0].OpenTime)/int64(interval.Milliseconds())+1)
+
+	first := klines[0]
+	newKlines[0] = first
+
+	for _, k := range klines[1:] {
+		i := (k.OpenTime - first.OpenTime) / int64(interval.Milliseconds())
+		newKlines[i] = k
+	}
+
+	for i, k := range newKlines {
+		if k != nil {
+			continue
+		}
+		prev := newKlines[i-1]
+		newKlines[i] = &bnc.Kline{
+			OpenTime:   prev.OpenTime + int64(interval.Milliseconds()),
+			CloseTime:  prev.CloseTime + int64(interval.Milliseconds()),
+			OpenPrice:  prev.ClosePrice,
+			ClosePrice: prev.ClosePrice,
+			HighPrice:  prev.ClosePrice,
+			LowPrice:   prev.ClosePrice,
+		}
+	}
+
+	// debug
+	for i, k := range newKlines[1:] {
+		if k.OpenTime != newKlines[i].CloseTime+1 {
+			panic(fmt.Sprintf("OneDirAggTradesToKlines Debug: kline %d and %d are not continuous", i, i+1))
+		}
+	}
+
+	return newKlines, nil
 }
