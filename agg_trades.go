@@ -93,6 +93,8 @@ func AggTradesToKlines(aggTrades []bnc.SpotAggTrades, interval time.Duration) ([
 				klines = append(klines, kline)
 			}
 
+			openTime = openTime.Add(interval)
+
 			kline = &bnc.Kline{
 				OpenTime:  openTime.UnixMilli(),
 				CloseTime: openTime.Add(interval).UnixMilli() - 1,
