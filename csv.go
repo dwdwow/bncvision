@@ -4,6 +4,8 @@ import (
 	"encoding/csv"
 	"io"
 	"os"
+
+	"github.com/dwdwow/cex/bnc"
 )
 
 // ReadCSV reads a CSV file and returns its contents as a slice of string slices.
@@ -91,6 +93,46 @@ func CSVToStructs[T any](data [][]string, convertFunc RawToStructFunc[T]) ([]T, 
 	return result, nil
 }
 
+// CSVToStructsWithFilter converts CSV data to a slice of structs using a provided conversion function and a filter function.
+//
+// Parameters:
+//   - data: A slice of string slices representing the CSV data.
+//   - convertFunc: A function that converts a single CSV row (string slice) to a struct of type T.
+//   - filterFunc: A function that filters the structs based on a condition.
+//
+// Returns:
+//   - A slice of structs of type T, where each struct represents a row from the CSV data that passes the filter.
+//   - An error if any conversion fails, nil otherwise.
+func CSVToStructsWithFilter[T any](data [][]string, convertFunc RawToStructFunc[T], filter func(T) bool) ([]T, error) {
+	var result []T
+
+	if len(data) == 0 {
+		return result, nil
+	}
+
+	var start int
+
+	_, err := convertFunc(data[0])
+	if err != nil {
+		if len(data) == 1 {
+			return nil, err
+		}
+		start = 1
+	}
+
+	for _, row := range data[start:] {
+		item, err := convertFunc(row)
+		if err != nil {
+			return nil, err
+		}
+		if filter(item) {
+			result = append(result, item)
+		}
+	}
+
+	return result, nil
+}
+
 // ReadCSVToStructs reads a CSV file and converts its contents to a slice of structs using a provided conversion function.
 //
 // Parameters:
@@ -106,4 +148,26 @@ func ReadCSVToStructs[T any](filePath string, convertFunc RawToStructFunc[T]) ([
 		return nil, err
 	}
 	return CSVToStructs(data, convertFunc)
+}
+
+// ReadCSVToStructsWithFilter reads a CSV file and converts its contents to a slice of structs using a provided conversion function and a filter function.
+//
+// Parameters:
+//   - filePath: The path to the CSV file to be read.
+//   - convertFunc: A function that converts a single CSV row (string slice) to a struct of type T.
+//   - filterFunc: A function that filters the structs based on a condition.
+//
+// Returns:
+//   - A slice of structs of type T, where each struct represents a row from the CSV data that passes the filter.
+//   - An error if any step of the reading or conversion process fails, nil otherwise.
+func ReadCSVToStructsWithFilter[T any](filePath string, convertFunc RawToStructFunc[T], filterFunc func(T) bool) ([]T, error) {
+	data, err := ReadCSV(filePath)
+	if err != nil {
+		return nil, err
+	}
+	return CSVToStructsWithFilter(data, convertFunc, filterFunc)
+}
+
+func AggTradesReadFilter(aggTrade bnc.SpotAggTrades) bool {
+	return aggTrade.FirstTradeId != -1 && aggTrade.LastTradeId != -1
 }

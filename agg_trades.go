@@ -81,7 +81,7 @@ func VerifyOneDirAggTradesContinuity(dir string, maxCpus int) error {
 		wg.Go(func() error {
 			filePath := filepath.Join(dir, file)
 			slog.Info("Reading CSV To Structs", "file", file)
-			aggTrades, err := ReadCSVToStructs(filePath, AggTradeRawToStruct)
+			aggTrades, err := ReadCSVToStructsWithFilter(filePath, AggTradeRawToStruct, AggTradesReadFilter)
 			if err != nil {
 				slog.Error("Read CSV To Structs", "file", file, "error", err)
 				return err
@@ -230,7 +230,7 @@ func OneDirAggTradesToInnerDayKlines(dir string, interval time.Duration, maxCpus
 		file := file
 		wg.Go(func() error {
 			slog.Info("Reading CSV To Structs", "file", file)
-			aggTrades, err := ReadCSVToStructs(filepath.Join(dir, file), AggTradeRawToStruct)
+			aggTrades, err := ReadCSVToStructsWithFilter(filepath.Join(dir, file), AggTradeRawToStruct, AggTradesReadFilter)
 			if err != nil {
 				slog.Error("Read CSV To Structs", "file", file, "error", err)
 				return err
