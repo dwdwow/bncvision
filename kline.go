@@ -2,12 +2,12 @@ package bncvision
 
 import (
 	"errors"
-	"sync"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dwdwow/cex/bnc"
-	"github.com/dwdwow/props"
-	"golang.org/x/sync/errgroup"
+	"github.com/dwdwow/mathy"
 )
 
 type KlineInterval string
@@ -141,6 +141,24 @@ var BncKlineIntervalToKlineInterval = map[bnc.KlineInterval]KlineInterval{
 	bnc.KlineInterval1M:  Kline1mo,
 }
 
+func BncKlineToCSVRaw(kline bnc.Kline) string {
+	cells := []string{
+		strconv.FormatInt(kline.OpenTime, 10),
+		mathy.BN(kline.OpenPrice).Round(8).String(),
+		mathy.BN(kline.HighPrice).Round(8).String(),
+		mathy.BN(kline.LowPrice).Round(8).String(),
+		mathy.BN(kline.ClosePrice).Round(8).String(),
+		mathy.BN(kline.Volume).Round(8).String(),
+		strconv.FormatInt(kline.CloseTime, 10),
+		mathy.BN(kline.QuoteAssetVolume).Round(8).String(),
+		strconv.FormatInt(kline.TradesNumber, 10),
+		mathy.BN(kline.TakerBuyBaseAssetVolume).Round(8).String(),
+		mathy.BN(kline.TakerBuyQuoteAssetVolume).Round(8).String(),
+		"unused",
+	}
+	return strings.Join(cells, ",")
+}
+
 func IsMonthFirstDay(ts int64) bool {
 	t := time.UnixMilli(ts)
 	return t.Day() == 1 && t.Hour() == 0 && t.Minute() == 0 && t.Second() == 0 && t.Nanosecond() == 0
@@ -159,7 +177,7 @@ func CalKlineInterval(kline bnc.Kline) (KlineInterval, error) {
 	if !IsMonthFirstDay(kline.OpenTime) {
 		return "", ErrKlineIntervalNotSupported
 	}
-	if start.AddDate(0, 1, 0).Compare(end.Add(time.Duration(1))) == 0 {
+	if start.AddDate(0, 1, 0).Compare(end.Add(time.Millisecond)) == 0 {
 		return Kline1mo, nil
 	}
 	return "", ErrKlineIntervalNotSupported
@@ -183,7 +201,10 @@ func CalMissingKlineOpenTimes(startOpenTime, endOpenTime int64, interval KlineIn
 
 	missingTs := []int64{}
 
-	for start := time.UnixMilli(startOpenTime).Add(time.Duration(milli)).AddDate(0, months, 0); start.Before(time.UnixMilli(endOpenTime)); start = start.Add(time.Duration(milli)).AddDate(0, months, 0) {
+	du := time.Millisecond * time.Duration(milli)
+
+	start := time.UnixMilli(startOpenTime).Add(du).AddDate(0, months, 0)
+	for ; start.Before(time.UnixMilli(endOpenTime)); start = start.Add(du).AddDate(0, months, 0) {
 		missingTs = append(missingTs, start.UnixMilli())
 	}
 
@@ -197,75 +218,75 @@ type KlineVerifyResult struct {
 	OK            bool
 }
 
-func VerifyKlines(klines []bnc.Kline, maxCpus int) (KlineVerifyResult, error) {
-	result := KlineVerifyResult{}
+// func VerifyKlines(klines []bnc.Kline, maxCpus int) (KlineVerifyResult, error) {
+// 	result := KlineVerifyResult{}
 
-	if len(klines) == 0 {
-		return KlineVerifyResult{}, errors.New("empty klines")
-	}
+// 	if len(klines) == 0 {
+// 		return KlineVerifyResult{}, errors.New("empty klines")
+// 	}
 
-	first := klines[0]
+// 	first := klines[0]
 
-	interval, err := CalKlineInterval(first)
-	if err != nil {
-		return result, err
-	}
-	result.Interval = interval
+// 	interval, err := CalKlineInterval(first)
+// 	if err != nil {
+// 		return result, err
+// 	}
+// 	result.Interval = interval
 
-	if maxCpus <= 0 {
-		maxCpus = 1
-	}
+// 	if maxCpus <= 0 {
+// 		maxCpus = 1
+// 	}
 
-	groups := props.DivideIntoGroups(klines, len(klines)/maxCpus)
+// 	groups := props.DivideIntoGroups(klines, len(klines)/maxCpus)
 
-	for i, group := range groups[:len(groups)-1] {
-		if groups[i+1] == nil {
-			continue
-		}
-		nextOpenTime := group[len(group)-1].CloseTime + 1
-		nextGroupOpenTime := groups[i+1][0].OpenTime
-		if nextOpenTime == nextGroupOpenTime {
-			continue
-		}
-		missingTs, err := CalMissingKlineOpenTimes(nextOpenTime, nextGroupOpenTime, interval)
-		if err != nil {
-			return result, err
-		}
-		result.MissingTs = append(result.MissingTs, missingTs...)
-	}
+// 	for i, group := range groups[:len(groups)-1] {
+// 		if groups[i+1] == nil {
+// 			continue
+// 		}
+// 		nextOpenTime := group[len(group)-1].CloseTime + 1
+// 		nextGroupOpenTime := groups[i+1][0].OpenTime
+// 		if nextOpenTime == nextGroupOpenTime {
+// 			continue
+// 		}
+// 		missingTs, err := CalMissingKlineOpenTimes(nextOpenTime, nextGroupOpenTime, interval)
+// 		if err != nil {
+// 			return result, err
+// 		}
+// 		result.MissingTs = append(result.MissingTs, missingTs...)
+// 	}
 
-	wg := errgroup.Group{}
-	wg.SetLimit(maxCpus)
-	mu := sync.Mutex{}
+// 	wg := errgroup.Group{}
+// 	wg.SetLimit(maxCpus)
+// 	mu := sync.Mutex{}
 
-	for _, group := range groups {
-		group := group
-		if len(group) == 0 {
-			continue
-		}
-		wg.Go(func() error {
-			// TODO should check the kline is valid
-			for i, kline := range group[:len(group)-1] {
-				nextOpenTime := group[i+1].OpenTime
-				missingTs, err := CalMissingKlineOpenTimes(kline.OpenTime, nextOpenTime, interval)
-				if err != nil {
-					return err
-				}
-				mu.Lock()
-				result.MissingTs = append(result.MissingTs, missingTs...)
-				mu.Unlock()
-			}
-			return nil
-		})
-	}
+// 	for _, group := range groups {
+// 		group := group
+// 		if len(group) == 0 {
+// 			continue
+// 		}
+// 		wg.Go(func() error {
+// 			// TODO should check the kline is valid
+// 			for i, kline := range group[:len(group)-1] {
+// 				nextOpenTime := group[i+1].OpenTime
+// 				missingTs, err := CalMissingKlineOpenTimes(kline.OpenTime, nextOpenTime, interval)
+// 				if err != nil {
+// 					return err
+// 				}
+// 				mu.Lock()
+// 				result.MissingTs = append(result.MissingTs, missingTs...)
+// 				mu.Unlock()
+// 			}
+// 			return nil
+// 		})
+// 	}
 
-	if err := wg.Wait(); err != nil {
-		return result, err
-	}
+// 	if err := wg.Wait(); err != nil {
+// 		return result, err
+// 	}
 
-	if len(result.MissingTs) == 0 && len(result.InvalidKlines) == 0 {
-		result.OK = true
-	}
+// 	if len(result.MissingTs) == 0 && len(result.InvalidKlines) == 0 {
+// 		result.OK = true
+// 	}
 
-	return result, nil
-}
+// 	return result, nil
+// }
