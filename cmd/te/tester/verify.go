@@ -2,6 +2,7 @@ package tester
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dwdwow/bncvision"
 )
@@ -13,5 +14,12 @@ func VerifyOneDirAggTradesContinuity() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(missingIds)
+	for _, missing := range missingIds {
+		fmt.Println(
+			time.UnixMilli(missing.StartTime).Format(time.RFC3339Nano),
+			time.UnixMilli(missing.EndTime).Format(time.RFC3339Nano),
+			missing.StartId,
+			missing.EndId,
+		)
+	}
 }
