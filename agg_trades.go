@@ -140,7 +140,7 @@ func OneDirAggTradesMissingIDs(dir string, maxCpus int) ([]int64, error) {
 	wg := errgroup.Group{}
 	wg.SetLimit(maxCpus)
 
-	lastIds := make([]int64, len(validFiles))
+	lastIds := make([][2]int64, len(validFiles))
 
 	missingIds := []int64{}
 	mu := sync.Mutex{}
@@ -162,8 +162,9 @@ func OneDirAggTradesMissingIDs(dir string, maxCpus int) ([]int64, error) {
 			}
 			slog.Info("Verifying Agg Trades Continuity", "file", file)
 			for j, aggTrade := range aggTrades[1:] {
-				lastId := aggTrades[j-1].Id
+				lastId := aggTrades[j].Id
 				if aggTrade.Id != lastId+1 {
+					slog.Warn("Missing Agg Trade IDs", "file", file, "from", lastId+1, "to", aggTrade.Id-1)
 					for id := lastId + 1; id < aggTrade.Id; id++ {
 						mu.Lock()
 						missingIds = append(missingIds, id)
@@ -172,7 +173,7 @@ func OneDirAggTradesMissingIDs(dir string, maxCpus int) ([]int64, error) {
 				}
 			}
 			slog.Info("Verified Agg Trades Continuity", "file", file)
-			lastIds[i] = aggTrades[len(aggTrades)-1].Id
+			lastIds[i] = [2]int64{aggTrades[0].Id, aggTrades[len(aggTrades)-1].Id}
 			return nil
 		})
 	}
@@ -182,9 +183,10 @@ func OneDirAggTradesMissingIDs(dir string, maxCpus int) ([]int64, error) {
 		return nil, err
 	}
 
-	for i := range validFiles[1:] {
-		if lastIds[i-1]+1 != lastIds[i] {
-			for id := lastIds[i-1] + 1; id < lastIds[i]; id++ {
+	for i, ids := range lastIds[:len(lastIds)-1] {
+		if ids[1]+1 != lastIds[i+1][0] {
+			slog.Warn("Missing Agg Trade IDs", "file", validFiles[i], "from", ids[1]+1, "to", lastIds[i+1][0]-1)
+			for id := ids[1] + 1; id < lastIds[i+1][0]; id++ {
 				missingIds = append(missingIds, id)
 			}
 		}
