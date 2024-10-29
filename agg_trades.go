@@ -117,6 +117,82 @@ func VerifyOneDirAggTradesContinuity(dir string, maxCpus int) error {
 	return nil
 }
 
+func OneDirAggTradesMissingIDs(dir string, maxCpus int) ([]int64, error) {
+	if maxCpus <= 0 {
+		maxCpus = 1
+	}
+
+	var validFiles []string
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), ".csv") {
+			validFiles = append(validFiles, file.Name())
+		}
+	}
+
+	sort.Slice(validFiles, func(i, j int) bool {
+		return validFiles[i] < validFiles[j]
+	})
+
+	wg := errgroup.Group{}
+	wg.SetLimit(maxCpus)
+
+	lastIds := make([]int64, len(validFiles))
+
+	missingIds := []int64{}
+	mu := sync.Mutex{}
+
+	for i, file := range validFiles {
+		i, file := i, file
+		wg.Go(func() error {
+			filePath := filepath.Join(dir, file)
+			slog.Info("Reading CSV To Structs", "file", file)
+			aggTrades, err := ReadCSVToStructsWithFilter(filePath, AggTradeRawToStruct, AggTradesReadFilter)
+			if err != nil {
+				slog.Error("Read CSV To Structs", "file", file, "error", err)
+				return err
+			}
+			slog.Info("Read CSV To Structs", "file", file, "len", len(aggTrades))
+			if len(aggTrades) == 0 {
+				slog.Info("ReadCSVToStructs Skip", "file", file, "len", len(aggTrades))
+				return nil
+			}
+			slog.Info("Verifying Agg Trades Continuity", "file", file)
+			for j, aggTrade := range aggTrades[1:] {
+				lastId := aggTrades[j-1].Id
+				if aggTrade.Id != lastId+1 {
+					for id := lastId + 1; id < aggTrade.Id; id++ {
+						mu.Lock()
+						missingIds = append(missingIds, id)
+						mu.Unlock()
+					}
+				}
+			}
+			slog.Info("Verified Agg Trades Continuity", "file", file)
+			lastIds[i] = aggTrades[len(aggTrades)-1].Id
+			return nil
+		})
+	}
+
+	err = wg.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range validFiles[1:] {
+		if lastIds[i-1]+1 != lastIds[i] {
+			for id := lastIds[i-1] + 1; id < lastIds[i]; id++ {
+				missingIds = append(missingIds, id)
+			}
+		}
+	}
+
+	return missingIds, nil
+}
+
 func AggTradesToKlines(aggTrades []bnc.SpotAggTrades, interval time.Duration) ([]*bnc.Kline, error) {
 	if len(aggTrades) == 0 {
 		return nil, nil
