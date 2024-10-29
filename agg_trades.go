@@ -17,7 +17,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func VerifyAggTradesContinues(aggTrades []bnc.SpotAggTrades, maxCpus int) error {
+func VerifyAggTradesContinues(aggTrades []bnc.AggTrades, maxCpus int) error {
 	if maxCpus <= 0 {
 		maxCpus = 1
 	}
@@ -117,7 +117,14 @@ func VerifyOneDirAggTradesContinuity(dir string, maxCpus int) error {
 	return nil
 }
 
-func OneDirAggTradesMissingIDs(dir string, maxCpus int) ([]int64, error) {
+type MissingAggTrades struct {
+	StartId   int64
+	EndId     int64
+	StartTime int64
+	EndTime   int64
+}
+
+func OneDirAggTradesMissingIDs(dir string, maxCpus int) ([]MissingAggTrades, error) {
 	if maxCpus <= 0 {
 		maxCpus = 1
 	}
@@ -140,9 +147,9 @@ func OneDirAggTradesMissingIDs(dir string, maxCpus int) ([]int64, error) {
 	wg := errgroup.Group{}
 	wg.SetLimit(maxCpus)
 
-	lastIds := make([][2]int64, len(validFiles))
+	lastIds := make([][2]bnc.AggTrades, len(validFiles))
 
-	missingIds := []int64{}
+	var missings []MissingAggTrades
 	mu := sync.Mutex{}
 
 	for i, file := range validFiles {
@@ -165,15 +172,18 @@ func OneDirAggTradesMissingIDs(dir string, maxCpus int) ([]int64, error) {
 				lastId := aggTrades[j].Id
 				if aggTrade.Id != lastId+1 {
 					slog.Warn("Missing Agg Trade IDs", "file", file, "from", lastId+1, "to", aggTrade.Id-1)
-					for id := lastId + 1; id < aggTrade.Id; id++ {
-						mu.Lock()
-						missingIds = append(missingIds, id)
-						mu.Unlock()
-					}
+					mu.Lock()
+					missings = append(missings, MissingAggTrades{
+						StartId:   lastId + 1,
+						EndId:     aggTrade.Id - 1,
+						StartTime: aggTrades[j].Time,
+						EndTime:   aggTrade.Time,
+					})
+					mu.Unlock()
 				}
 			}
 			slog.Info("Verified Agg Trades Continuity", "file", file)
-			lastIds[i] = [2]int64{aggTrades[0].Id, aggTrades[len(aggTrades)-1].Id}
+			lastIds[i] = [2]bnc.AggTrades{aggTrades[0], aggTrades[len(aggTrades)-1]}
 			return nil
 		})
 	}
@@ -184,18 +194,25 @@ func OneDirAggTradesMissingIDs(dir string, maxCpus int) ([]int64, error) {
 	}
 
 	for i, ids := range lastIds[:len(lastIds)-1] {
-		if ids[1]+1 != lastIds[i+1][0] {
-			slog.Warn("Missing Agg Trade IDs", "file", validFiles[i], "from", ids[1]+1, "to", lastIds[i+1][0]-1)
-			for id := ids[1] + 1; id < lastIds[i+1][0]; id++ {
-				missingIds = append(missingIds, id)
-			}
+		if ids[1].Id+1 != lastIds[i+1][0].Id {
+			slog.Warn("Missing Agg Trade IDs", "file", validFiles[i], "from", ids[1].Id+1, "to", lastIds[i+1][0].Id-1)
+			missings = append(missings, MissingAggTrades{
+				StartId:   ids[1].Id + 1,
+				EndId:     lastIds[i+1][0].Id - 1,
+				StartTime: ids[1].Time,
+				EndTime:   lastIds[i+1][0].Time,
+			})
 		}
 	}
 
-	return missingIds, nil
+	sort.Slice(missings, func(i, j int) bool {
+		return missings[i].StartId < missings[j].StartId
+	})
+
+	return missings, nil
 }
 
-func AggTradesToKlines(aggTrades []bnc.SpotAggTrades, interval time.Duration) ([]*bnc.Kline, error) {
+func AggTradesToKlines(aggTrades []bnc.AggTrades, interval time.Duration) ([]*bnc.Kline, error) {
 	if len(aggTrades) == 0 {
 		return nil, nil
 	}

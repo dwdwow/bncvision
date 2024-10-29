@@ -168,6 +168,6 @@ func ReadCSVToStructsWithFilter[T any](filePath string, convertFunc RawToStructF
 	return CSVToStructsWithFilter(data, convertFunc, filterFunc)
 }
 
-func AggTradesReadFilter(aggTrade bnc.SpotAggTrades) bool {
+func AggTradesReadFilter(aggTrade bnc.AggTrades) bool {
 	return aggTrade.FirstTradeId != -1 && aggTrade.LastTradeId != -1
 }

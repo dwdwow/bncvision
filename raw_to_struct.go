@@ -43,8 +43,8 @@ func SpotTradeRawToStruct(raw []string) (bnc.SpotTrade, error) {
 	return trade, nil
 }
 
-func AggTradeRawToStruct(raw []string) (bnc.SpotAggTrades, error) {
-	trade := bnc.SpotAggTrades{}
+func AggTradeRawToStruct(raw []string) (bnc.AggTrades, error) {
+	trade := bnc.AggTrades{}
 	var err error
 	trade.Id, err = strconv.ParseInt(raw[0], 10, 64)
 	if err != nil {

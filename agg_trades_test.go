@@ -11,21 +11,21 @@ import (
 func TestAggTradesToKlines(t *testing.T) {
 	testCases := []struct {
 		name           string
-		aggTrades      []bnc.SpotAggTrades
+		aggTrades      []bnc.AggTrades
 		interval       time.Duration
 		expectedKlines []*bnc.Kline
 		expectedError  error
 	}{
 		{
 			name:           "Empty aggTrades",
-			aggTrades:      []bnc.SpotAggTrades{},
+			aggTrades:      []bnc.AggTrades{},
 			interval:       time.Minute,
 			expectedKlines: nil,
 			expectedError:  nil,
 		},
 		{
 			name: "Single aggTrade",
-			aggTrades: []bnc.SpotAggTrades{
+			aggTrades: []bnc.AggTrades{
 				{Time: 1609459200000, Price: 100, Qty: 1, IsBuyerMaker: false},
 			},
 			interval: time.Minute,
@@ -47,7 +47,7 @@ func TestAggTradesToKlines(t *testing.T) {
 		},
 		{
 			name: "Single aggTrade, 1 second after minute",
-			aggTrades: []bnc.SpotAggTrades{
+			aggTrades: []bnc.AggTrades{
 				{Time: 1609459201011, Price: 100, Qty: 1, IsBuyerMaker: false},
 			},
 			interval: time.Minute,
@@ -69,7 +69,7 @@ func TestAggTradesToKlines(t *testing.T) {
 		},
 		{
 			name: "Multiple aggTrades within same kline",
-			aggTrades: []bnc.SpotAggTrades{
+			aggTrades: []bnc.AggTrades{
 				{Time: 1609459200000, Price: 100, Qty: 1, IsBuyerMaker: false},
 				{Time: 1609459230000, Price: 101, Qty: 2, IsBuyerMaker: true},
 				{Time: 1609459250000, Price: 99, Qty: 3, IsBuyerMaker: false},
@@ -93,7 +93,7 @@ func TestAggTradesToKlines(t *testing.T) {
 		},
 		{
 			name: "Multiple aggTrades within same kline, 1 second after minute",
-			aggTrades: []bnc.SpotAggTrades{
+			aggTrades: []bnc.AggTrades{
 				{Time: 1609459201000, Price: 100, Qty: 1, IsBuyerMaker: false},
 				{Time: 1609459231000, Price: 101, Qty: 2, IsBuyerMaker: true},
 				{Time: 1609459251000, Price: 99, Qty: 3, IsBuyerMaker: false},
@@ -117,7 +117,7 @@ func TestAggTradesToKlines(t *testing.T) {
 		},
 		{
 			name: "Multiple aggTrades across klines",
-			aggTrades: []bnc.SpotAggTrades{
+			aggTrades: []bnc.AggTrades{
 				{Time: 1609459200000, Price: 100, Qty: 1, IsBuyerMaker: false},
 				{Time: 1609459260000, Price: 101, Qty: 2, IsBuyerMaker: true},
 				{Time: 1609459320000, Price: 99, Qty: 3, IsBuyerMaker: false},
@@ -165,7 +165,7 @@ func TestAggTradesToKlines(t *testing.T) {
 		},
 		{
 			name: "Multiple aggTrades across klines, 1 second after minute",
-			aggTrades: []bnc.SpotAggTrades{
+			aggTrades: []bnc.AggTrades{
 				{Time: 1609459201000, Price: 100, Qty: 1, IsBuyerMaker: false},
 				{Time: 1609459261000, Price: 101, Qty: 2, IsBuyerMaker: true},
 				{Time: 1609459321000, Price: 99, Qty: 3, IsBuyerMaker: false},
