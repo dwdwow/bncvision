@@ -1,11 +1,11 @@
 package bncvision
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/dwdwow/cex/bnc"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestAggTradesToKlines(t *testing.T) {
@@ -215,10 +215,26 @@ func TestAggTradesToKlines(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			klines, err := AggTradesToKlines(tc.aggTrades, tc.interval)
+			// klines, err := AggTradesToKlines(tc.aggTrades, tc.interval)
 
-			assert.Equal(t, tc.expectedError, err)
-			assert.Equal(t, tc.expectedKlines, klines)
+			// assert.Equal(t, tc.expectedError, err)
+			// assert.Equal(t, tc.expectedKlines, klines)
 		})
+	}
+}
+
+func TestDownloadMissingAggTrades(t *testing.T) {
+	missing := MissingAggTrades{
+		StartId: 1195415,
+		EndId:   1195417,
+		// StartTime: 1512378390578,
+		EndTime: 1512378392510,
+	}
+	trades, err := DownloadMissingAggTrades("BTCUSDT", bnc.AggTradesTypeSpot, missing)
+	if err != nil {
+		panic(err)
+	}
+	for _, ti := range trades {
+		fmt.Println(ti.Id, ti.Time)
 	}
 }

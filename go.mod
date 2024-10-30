@@ -3,7 +3,7 @@ module github.com/dwdwow/bncvision
 go 1.22.1
 
 require (
-	github.com/dwdwow/cex v0.0.62
+	github.com/dwdwow/cex v0.0.64
 	github.com/dwdwow/mathy v0.0.2
 	github.com/dwdwow/props v0.0.7
 	github.com/stretchr/testify v1.8.0

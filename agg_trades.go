@@ -212,6 +212,60 @@ func OneDirAggTradesMissingIDs(dir string, maxCpus int) ([]MissingAggTrades, err
 	return missings, nil
 }
 
+func DownloadMissingAggTrades(symbol string, tradesType bnc.AggTradesType, missing MissingAggTrades) (trades []bnc.AggTrades, err error) {
+	fromId := missing.StartId
+	for {
+		if fromId > missing.EndId {
+			break
+		}
+		var ts []bnc.AggTrades
+		// Binance aggTrades timestamp may be out of order.
+		// So we can't use StartTime and EndTime to query.
+		ts, err = bnc.QueryAggTrades(bnc.AggTradesParams{
+			Symbol: symbol,
+			FromId: fromId,
+			Limit:  1000,
+			// StartTime: missing.StartTime,
+			// EndTime:   missing.EndTime,
+		}, tradesType)
+		if err != nil {
+			return
+		}
+		if len(ts) == 0 {
+			break
+		}
+		for _, t := range ts {
+			if t.Id > missing.EndId {
+				break
+			}
+			trades = append(trades, t)
+		}
+		fromId = ts[len(ts)-1].Id + 1
+	}
+	sort.Slice(trades, func(i, j int) bool {
+		return trades[i].Id < trades[j].Id
+	})
+	return
+}
+
+func DownloadMissingAggTradesAndSave(dir, symbol string, tradesType bnc.AggTradesType, missing MissingAggTrades) (trades []bnc.AggTrades, err error) {
+	trades, err = DownloadMissingAggTrades(symbol, tradesType, missing)
+	if err != nil {
+		return
+	}
+	var csvRows []string
+	for _, trade := range trades {
+		csvRows = append(csvRows, trade.CSVRow())
+	}
+	fileName := symbol + "-aggTrades-" + time.UnixMilli(missing.StartTime).Format("2006-01-02") + ".csv"
+	filePath := filepath.Join(dir, fileName)
+	err = os.WriteFile(filePath, []byte(strings.Join(csvRows, "\n")), 0666)
+	if err != nil {
+		return
+	}
+	return
+}
+
 func AggTradesToKlines(aggTrades []bnc.AggTrades, interval time.Duration) ([]*bnc.Kline, error) {
 	if len(aggTrades) == 0 {
 		return nil, nil
