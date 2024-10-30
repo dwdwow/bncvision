@@ -2,6 +2,7 @@ package bncvision
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"math"
 	"os"
@@ -282,6 +283,75 @@ func VerifyOneDirAggTradesContinuityAndDownloadMissing(aggTradesDir, saveDir, sy
 			return err
 		}
 		slog.Info("Downloaded Missing Agg Trades", "symbol", symbol, "start", time.UnixMilli(missing.StartTime).Format(time.RFC3339Nano), "end", time.UnixMilli(missing.EndTime).Format(time.RFC3339Nano), "fromId", missing.StartId, "toId", missing.EndId)
+	}
+	return nil
+}
+
+func TidyOneDirAggTrades(rawDir, missingDir, tidyDir, symbol string, maxCpus int) error {
+	files, err := os.ReadDir(rawDir)
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		if !strings.HasSuffix(file.Name(), ".csv") {
+			continue
+		}
+		tidyFilePath := filepath.Join(tidyDir, file.Name())
+		tidyFileExists, err := FileExists(tidyFilePath)
+		if err != nil {
+			return err
+		}
+		if tidyFileExists {
+			continue
+		}
+		missingFilePath := filepath.Join(missingDir, file.Name())
+		missingFileExists, err := FileExists(missingFilePath)
+		if err != nil {
+			return err
+		}
+		rawFilePath := filepath.Join(rawDir, file.Name())
+		if !missingFileExists {
+			src, err := os.Open(rawFilePath)
+			if err != nil {
+				src.Close()
+				return err
+			}
+			dst, err := os.Create(tidyFilePath)
+			if err != nil {
+				src.Close()
+				dst.Close()
+				return err
+			}
+			_, err = io.Copy(dst, src)
+			if err != nil {
+				src.Close()
+				dst.Close()
+				return err
+			}
+			src.Close()
+			dst.Close()
+			continue
+		}
+		rawAggTrades, err := ReadCSVToStructs(rawFilePath, AggTradeRawToStruct)
+		if err != nil {
+			return err
+		}
+		missingAggTrades, err := ReadCSVToStructs(missingFilePath, AggTradeRawToStruct)
+		if err != nil {
+			return err
+		}
+		aggTrades := append(rawAggTrades, missingAggTrades...)
+		sort.Slice(aggTrades, func(i, j int) bool {
+			return aggTrades[i].Id < aggTrades[j].Id
+		})
+		var csvRows []string
+		for _, aggTrade := range aggTrades {
+			csvRows = append(csvRows, aggTrade.CSVRow())
+		}
+		err = os.WriteFile(tidyFilePath, []byte(strings.Join(csvRows, "\n")), 0666)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
