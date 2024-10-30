@@ -336,16 +336,19 @@ func TidyOneDirAggTrades(rawDir, missingDir, tidyDir, symbol string, maxCpus int
 					dst.Close()
 					return err
 				}
+				slog.Info("Copying Raw Agg Trades", "file", file.Name())
 				_, err = io.Copy(dst, src)
 				if err != nil {
 					src.Close()
 					dst.Close()
 					return err
 				}
+				slog.Info("Copied Raw Agg Trades", "file", file.Name())
 				src.Close()
 				dst.Close()
 				return nil
 			}
+			slog.Info("Merging Raw And Missing Agg Trades", "file", file.Name())
 			rawAggTrades, err := ReadCSVToStructs(rawFilePath, AggTradeRawToStruct)
 			if err != nil {
 				return err
@@ -358,14 +361,17 @@ func TidyOneDirAggTrades(rawDir, missingDir, tidyDir, symbol string, maxCpus int
 			sort.Slice(aggTrades, func(i, j int) bool {
 				return aggTrades[i].Id < aggTrades[j].Id
 			})
+			slog.Info("Merged Raw And Missing Agg Trades", "file", file.Name(), "len", len(aggTrades))
 			var csvRows []string
 			for _, aggTrade := range aggTrades {
 				csvRows = append(csvRows, aggTrade.CSVRow())
 			}
+			slog.Info("Writing Tidy Agg Trades", "file", file.Name())
 			err = os.WriteFile(tidyFilePath, []byte(strings.Join(csvRows, "\n")), 0666)
 			if err != nil {
 				return err
 			}
+			slog.Info("Saved Tidy Agg Trades", "file", file.Name())
 			return nil
 		})
 	}
