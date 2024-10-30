@@ -287,22 +287,31 @@ func ScanOneDirAggTradesMissingsAndDownload(aggTradesDir, saveDir, symbol string
 	return nil
 }
 
-func TidyOneDirAggTrades(rawDir, missingDir, tidyDir, symbol string, maxCpus int) error {
+type TidyOneDirAggTradesParams struct {
+	RawDir              string
+	MissingDir          string
+	TidyDir             string
+	Symbol              string
+	MaxCpus             int
+	CheckTidyFileExists bool
+}
+
+func TidyOneDirAggTrades(p TidyOneDirAggTradesParams) error {
 	err := os.MkdirAll(tidyDir, 0777)
 	if err != nil {
 		return err
 	}
-	files, err := os.ReadDir(rawDir)
+	files, err := os.ReadDir(p.RawDir)
 	if err != nil {
 		return err
 	}
 
-	if maxCpus <= 0 {
-		maxCpus = 1
+	if p.MaxCpus <= 0 {
+		p.MaxCpus = 1
 	}
 
 	wg := errgroup.Group{}
-	wg.SetLimit(maxCpus)
+	wg.SetLimit(p.MaxCpus)
 
 	for _, file := range files {
 		if !strings.HasSuffix(file.Name(), ".csv") {
@@ -310,20 +319,22 @@ func TidyOneDirAggTrades(rawDir, missingDir, tidyDir, symbol string, maxCpus int
 		}
 		file := file
 		wg.Go(func() error {
-			tidyFilePath := filepath.Join(tidyDir, file.Name())
-			tidyFileExists, err := FileExists(tidyFilePath)
-			if err != nil {
-				return err
+			tidyFilePath := filepath.Join(p.TidyDir, file.Name())
+			if p.CheckTidyFileExists {
+				tidyFileExists, err := FileExists(tidyFilePath)
+				if err != nil {
+					return err
+				}
+				if tidyFileExists {
+					return nil
+				}
 			}
-			if tidyFileExists {
-				return nil
-			}
-			missingFilePath := filepath.Join(missingDir, file.Name())
+			missingFilePath := filepath.Join(p.MissingDir, file.Name())
 			missingFileExists, err := FileExists(missingFilePath)
 			if err != nil {
 				return err
 			}
-			rawFilePath := filepath.Join(rawDir, file.Name())
+			rawFilePath := filepath.Join(p.RawDir, file.Name())
 			if !missingFileExists {
 				src, err := os.Open(rawFilePath)
 				if err != nil {

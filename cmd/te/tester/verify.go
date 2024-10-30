@@ -43,7 +43,14 @@ func TidyOneDirAggTrades() {
 	tidyDir := "/home/ubuntu/tidy.binance.vision/data/spot/daily/aggTrades/BTCUSDT"
 	symbol := "BTCUSDT"
 	maxCpus := 20
-	err := bncvision.TidyOneDirAggTrades(rawDir, missingDir, tidyDir, symbol, maxCpus)
+	err := bncvision.TidyOneDirAggTrades(bncvision.TidyOneDirAggTradesParams{
+		RawDir:              rawDir,
+		MissingDir:          missingDir,
+		TidyDir:             tidyDir,
+		Symbol:              symbol,
+		MaxCpus:             maxCpus,
+		CheckTidyFileExists: false,
+	})
 	if err != nil {
 		panic(err)
 	}
