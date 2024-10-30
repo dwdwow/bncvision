@@ -333,19 +333,18 @@ func TidyOneDirAggTrades(rawDir, missingDir, tidyDir, symbol string, maxCpus int
 				dst, err := os.Create(tidyFilePath)
 				if err != nil {
 					src.Close()
-					dst.Close()
 					return err
 				}
 				slog.Info("Copying Raw Agg Trades", "file", file.Name())
 				_, err = io.Copy(dst, src)
 				if err != nil {
-					src.Close()
 					dst.Close()
+					src.Close()
 					return err
 				}
 				slog.Info("Copied Raw Agg Trades", "file", file.Name())
-				src.Close()
 				dst.Close()
+				src.Close()
 				return nil
 			}
 			slog.Info("Merging Raw And Missing Agg Trades", "file", file.Name())
