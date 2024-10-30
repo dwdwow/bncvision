@@ -268,6 +268,10 @@ func DownloadMissingAggTradesAndSave(dir, symbol string, tradesType bnc.AggTrade
 }
 
 func ScanOneDirAggTradesMissingsAndDownload(aggTradesDir, saveDir, symbol string, tradesType bnc.AggTradesType, maxCpus int) error {
+	err := os.MkdirAll(saveDir, 0777)
+	if err != nil {
+		return err
+	}
 	missings, err := OneDirAggTradesMissings(aggTradesDir, maxCpus)
 	if err != nil {
 		return err

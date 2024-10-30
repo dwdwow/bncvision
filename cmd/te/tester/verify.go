@@ -25,9 +25,9 @@ func VerifyOneDirAggTradesContinuity() {
 	}
 }
 
-func VerifyOneDirAggTradesContinuityAndDownloadMissing() {
+func ScanOneDirAggTradesMissingsAndDownload() {
 	aggTradesDir := "/home/ubuntu/unzip.binance.vision/data/spot/daily/aggTrades/BTCUSDT"
-	saveDir := "/home/ubuntu/missing.binance.vision/data/spot/daily/missing/BTCUSDT"
+	saveDir := "/home/ubuntu/missing.binance.vision/data/spot/daily/aggTrades/BTCUSDT"
 	symbol := "BTCUSDT"
 	tradesType := bnc.AggTradesTypeSpot
 	maxCpus := 20
