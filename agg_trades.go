@@ -266,6 +266,24 @@ func DownloadMissingAggTradesAndSave(dir, symbol string, tradesType bnc.AggTrade
 	return
 }
 
+func VerifyOneDirAggTradesContinuityAndDownloadMissing(aggTradesDir, saveDir, symbol string, tradesType bnc.AggTradesType, maxCpus int) error {
+	err := VerifyOneDirAggTradesContinuity(aggTradesDir, maxCpus)
+	if err != nil {
+		return err
+	}
+	missings, err := OneDirAggTradesMissingIDs(aggTradesDir, maxCpus)
+	if err != nil {
+		return err
+	}
+	for _, missing := range missings {
+		_, err = DownloadMissingAggTradesAndSave(saveDir, symbol, tradesType, missing)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func AggTradesToKlines(aggTrades []bnc.AggTrades, interval time.Duration) ([]*bnc.Kline, error) {
 	if len(aggTrades) == 0 {
 		return nil, nil
