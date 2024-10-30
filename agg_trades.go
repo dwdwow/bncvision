@@ -288,6 +288,10 @@ func ScanOneDirAggTradesMissingsAndDownload(aggTradesDir, saveDir, symbol string
 }
 
 func TidyOneDirAggTrades(rawDir, missingDir, tidyDir, symbol string, maxCpus int) error {
+	err := os.MkdirAll(tidyDir, 0777)
+	if err != nil {
+		return err
+	}
 	files, err := os.ReadDir(rawDir)
 	if err != nil {
 		return err

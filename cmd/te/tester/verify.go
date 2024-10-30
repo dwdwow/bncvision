@@ -36,3 +36,15 @@ func ScanOneDirAggTradesMissingsAndDownload() {
 		panic(err)
 	}
 }
+
+func TidyOneDirAggTrades() {
+	rawDir := "/home/ubuntu/unzip.binance.vision/data/spot/daily/aggTrades/BTCUSDT"
+	missingDir := "/home/ubuntu/missing.binance.vision/data/spot/daily/aggTrades/BTCUSDT"
+	tidyDir := "/home/ubuntu/tidy.binance.vision/data/spot/daily/aggTrades/BTCUSDT"
+	symbol := "BTCUSDT"
+	maxCpus := 20
+	err := bncvision.TidyOneDirAggTrades(rawDir, missingDir, tidyDir, symbol, maxCpus)
+	if err != nil {
+		panic(err)
+	}
+}
