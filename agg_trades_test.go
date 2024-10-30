@@ -225,8 +225,8 @@ func TestAggTradesToKlines(t *testing.T) {
 
 func TestDownloadMissingAggTrades(t *testing.T) {
 	missing := MissingAggTrades{
-		StartId: 1195415,
-		EndId:   1195417,
+		StartId: 5897501,
+		EndId:   5897502,
 		// StartTime: 1512378390578,
 		EndTime: 1512378392510,
 	}
@@ -235,6 +235,6 @@ func TestDownloadMissingAggTrades(t *testing.T) {
 		panic(err)
 	}
 	for _, ti := range trades {
-		fmt.Println(ti.Id, ti.Time)
+		fmt.Println(ti)
 	}
 }

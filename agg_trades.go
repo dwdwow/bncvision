@@ -82,7 +82,7 @@ func VerifyOneDirAggTradesContinuity(dir string, maxCpus int) error {
 		wg.Go(func() error {
 			filePath := filepath.Join(dir, file)
 			slog.Info("Reading CSV To Structs", "file", file)
-			aggTrades, err := ReadCSVToStructsWithFilter(filePath, AggTradeRawToStruct, AggTradesReadFilter)
+			aggTrades, err := ReadCSVToStructs(filePath, AggTradeRawToStruct)
 			if err != nil {
 				slog.Error("Read CSV To Structs", "file", file, "error", err)
 				return err
@@ -158,7 +158,7 @@ func OneDirAggTradesMissings(dir string, maxCpus int) ([]MissingAggTrades, error
 		wg.Go(func() error {
 			filePath := filepath.Join(dir, file)
 			slog.Info("Reading CSV To Structs", "file", file)
-			aggTrades, err := ReadCSVToStructsWithFilter(filePath, AggTradeRawToStruct, AggTradesReadFilter)
+			aggTrades, err := ReadCSVToStructs(filePath, AggTradeRawToStruct)
 			if err != nil {
 				slog.Error("Read CSV To Structs", "file", file, "error", err)
 				return err
