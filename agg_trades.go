@@ -124,7 +124,7 @@ type MissingAggTrades struct {
 	EndTime   int64
 }
 
-func OneDirAggTradesMissingIDs(dir string, maxCpus int) ([]MissingAggTrades, error) {
+func OneDirAggTradesMissings(dir string, maxCpus int) ([]MissingAggTrades, error) {
 	if maxCpus <= 0 {
 		maxCpus = 1
 	}
@@ -271,15 +271,17 @@ func VerifyOneDirAggTradesContinuityAndDownloadMissing(aggTradesDir, saveDir, sy
 	if err != nil {
 		return err
 	}
-	missings, err := OneDirAggTradesMissingIDs(aggTradesDir, maxCpus)
+	missings, err := OneDirAggTradesMissings(aggTradesDir, maxCpus)
 	if err != nil {
 		return err
 	}
 	for _, missing := range missings {
+		slog.Info("Downloading Missing Agg Trades", "symbol", symbol, "start", time.UnixMilli(missing.StartTime).Format(time.RFC3339Nano), "end", time.UnixMilli(missing.EndTime).Format(time.RFC3339Nano), "fromId", missing.StartId, "toId", missing.EndId)
 		_, err = DownloadMissingAggTradesAndSave(saveDir, symbol, tradesType, missing)
 		if err != nil {
 			return err
 		}
+		slog.Info("Downloaded Missing Agg Trades", "symbol", symbol, "start", time.UnixMilli(missing.StartTime).Format(time.RFC3339Nano), "end", time.UnixMilli(missing.EndTime).Format(time.RFC3339Nano), "fromId", missing.StartId, "toId", missing.EndId)
 	}
 	return nil
 }

@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"github.com/dwdwow/bncvision"
+	"github.com/dwdwow/cex/bnc"
 )
 
 func VerifyOneDirAggTradesContinuity() {
 	dir := "/home/ubuntu/unzip.binance.vision/data/spot/daily/aggTrades/BTCUSDT"
 	maxCpus := 20
-	missingIds, err := bncvision.OneDirAggTradesMissingIDs(dir, maxCpus)
+	missingIds, err := bncvision.OneDirAggTradesMissings(dir, maxCpus)
 	if err != nil {
 		panic(err)
 	}
@@ -21,5 +22,17 @@ func VerifyOneDirAggTradesContinuity() {
 			missing.StartId,
 			missing.EndId,
 		)
+	}
+}
+
+func VerifyOneDirAggTradesContinuityAndDownloadMissing() {
+	aggTradesDir := "/home/ubuntu/unzip.binance.vision/data/spot/daily/aggTrades/BTCUSDT"
+	saveDir := "/home/ubuntu/missing.binance.vision/data/spot/daily/missing/BTCUSDT"
+	symbol := "BTCUSDT"
+	tradesType := bnc.AggTradesTypeSpot
+	maxCpus := 20
+	err := bncvision.VerifyOneDirAggTradesContinuityAndDownloadMissing(aggTradesDir, saveDir, symbol, tradesType, maxCpus)
+	if err != nil {
+		panic(err)
 	}
 }
