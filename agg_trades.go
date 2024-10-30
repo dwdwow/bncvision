@@ -267,11 +267,7 @@ func DownloadMissingAggTradesAndSave(dir, symbol string, tradesType bnc.AggTrade
 	return
 }
 
-func VerifyOneDirAggTradesContinuityAndDownloadMissing(aggTradesDir, saveDir, symbol string, tradesType bnc.AggTradesType, maxCpus int) error {
-	err := VerifyOneDirAggTradesContinuity(aggTradesDir, maxCpus)
-	if err != nil {
-		return err
-	}
+func ScanOneDirAggTradesMissingsAndDownload(aggTradesDir, saveDir, symbol string, tradesType bnc.AggTradesType, maxCpus int) error {
 	missings, err := OneDirAggTradesMissings(aggTradesDir, maxCpus)
 	if err != nil {
 		return err

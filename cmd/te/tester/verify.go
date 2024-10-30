@@ -31,7 +31,7 @@ func VerifyOneDirAggTradesContinuityAndDownloadMissing() {
 	symbol := "BTCUSDT"
 	tradesType := bnc.AggTradesTypeSpot
 	maxCpus := 20
-	err := bncvision.VerifyOneDirAggTradesContinuityAndDownloadMissing(aggTradesDir, saveDir, symbol, tradesType, maxCpus)
+	err := bncvision.ScanOneDirAggTradesMissingsAndDownload(aggTradesDir, saveDir, symbol, tradesType, maxCpus)
 	if err != nil {
 		panic(err)
 	}

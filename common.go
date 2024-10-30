@@ -15,7 +15,7 @@ const (
 	TIDY_BINANCE_VISION = "tidy.binance.vision"
 	// MISS_BINANCE_VISION is the directory for missing data from binance vision
 	// binance vision data is not complete, and some data is missing
-	MISS_BINANCE_VISION = "miss.binance.vision"
+	MISSING_BINANCE_VISION = "missing.binance.vision"
 	// UNZIP_BINANCE_VISION is the directory for unzipped binance vision data
 	UNZIP_BINANCE_VISION = "unzip.binance.vision"
 	// WORK_BINANCE_VISION is the directory for working with binance vision data
@@ -40,5 +40,5 @@ func init() {
 	}
 	dataDir = filepath.Join(homeDir, DATA_BINANCE_VISION, "data")
 	tidyDir = filepath.Join(homeDir, TIDY_BINANCE_VISION, "data")
-	missDir = filepath.Join(homeDir, MISS_BINANCE_VISION, "data")
+	missDir = filepath.Join(homeDir, MISSING_BINANCE_VISION, "data")
 }
