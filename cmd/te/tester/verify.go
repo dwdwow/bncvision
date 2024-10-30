@@ -9,7 +9,7 @@ import (
 )
 
 func VerifyOneDirAggTradesContinuity() {
-	dir := "/home/ubuntu/unzip.binance.vision/data/spot/daily/aggTrades/BTCUSDT"
+	dir := "/home/ubuntu/tidy.binance.vision/data/spot/daily/aggTrades/BTCUSDT"
 	maxCpus := 20
 	missingIds, err := bncvision.OneDirAggTradesMissings(dir, maxCpus)
 	if err != nil {
