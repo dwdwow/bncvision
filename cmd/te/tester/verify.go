@@ -11,7 +11,7 @@ import (
 func VerifyOneDirAggTradesContinuity() {
 	dir := "/home/ubuntu/tidy.binance.vision/data/spot/daily/aggTrades/BTCUSDT"
 	maxCpus := 20
-	missingIds, err := bncvision.OneDirAggTradesMissings(dir, maxCpus)
+	missingIds, err := bncvision.OneDirAggTradesMissings(dir, maxCpus, time.Date(2024, 10, 20, 0, 0, 0, 0, time.UTC))
 	if err != nil {
 		panic(err)
 	}
@@ -31,7 +31,8 @@ func ScanOneDirAggTradesMissingsAndDownload() {
 	symbol := "BTCUSDT"
 	tradesType := bnc.AggTradesTypeSpot
 	maxCpus := 20
-	err := bncvision.ScanOneDirAggTradesMissingsAndDownload(aggTradesDir, saveDir, symbol, tradesType, maxCpus)
+	startTime := time.Date(2024, 10, 20, 0, 0, 0, 0, time.UTC)
+	err := bncvision.ScanOneDirAggTradesMissingsAndDownload(aggTradesDir, saveDir, symbol, tradesType, maxCpus, startTime)
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +50,7 @@ func TidyOneDirAggTrades() {
 		TidyDir:             tidyDir,
 		Symbol:              symbol,
 		MaxCpus:             maxCpus,
-		CheckTidyFileExists: false,
+		CheckTidyFileExists: true,
 	})
 	if err != nil {
 		panic(err)

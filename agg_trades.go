@@ -125,7 +125,7 @@ type MissingAggTrades struct {
 	EndTime   int64
 }
 
-func OneDirAggTradesMissings(dir string, maxCpus int) ([]MissingAggTrades, error) {
+func OneDirAggTradesMissings(dir string, maxCpus int, startTime time.Time) ([]MissingAggTrades, error) {
 	if maxCpus <= 0 {
 		maxCpus = 1
 	}
@@ -135,10 +135,20 @@ func OneDirAggTradesMissings(dir string, maxCpus int) ([]MissingAggTrades, error
 	if err != nil {
 		return nil, err
 	}
+	st := startTime.Format("2006-01-02")
 	for _, file := range files {
-		if strings.HasSuffix(file.Name(), ".csv") {
-			validFiles = append(validFiles, file.Name())
+		if !strings.HasSuffix(file.Name(), ".csv") {
+			continue
 		}
+		name := strings.TrimSuffix(file.Name(), ".csv")
+		names := strings.Split(name, "-aggTrades-")
+		if len(names) != 2 {
+			continue
+		}
+		if names[1] < st {
+			continue
+		}
+		validFiles = append(validFiles, file.Name())
 	}
 
 	sort.Slice(validFiles, func(i, j int) bool {
@@ -267,12 +277,12 @@ func DownloadMissingAggTradesAndSave(dir, symbol string, tradesType bnc.AggTrade
 	return
 }
 
-func ScanOneDirAggTradesMissingsAndDownload(aggTradesDir, saveDir, symbol string, tradesType bnc.AggTradesType, maxCpus int) error {
+func ScanOneDirAggTradesMissingsAndDownload(aggTradesDir, saveDir, symbol string, tradesType bnc.AggTradesType, maxCpus int, startTime time.Time) error {
 	err := os.MkdirAll(saveDir, 0777)
 	if err != nil {
 		return err
 	}
-	missings, err := OneDirAggTradesMissings(aggTradesDir, maxCpus)
+	missings, err := OneDirAggTradesMissings(aggTradesDir, maxCpus, startTime)
 	if err != nil {
 		return err
 	}
